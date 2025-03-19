@@ -10,7 +10,10 @@ def intToStr(q: int) -> str:
     Converts integer to letters. Radix change formula
     to convert base 10 -> base 26
 
-    Note: 1-index version
+    Indexing: 1-index
+
+    Reverse: not reversed because it makes no difference
+    - usually radix conversion needs to be reversed for correct
     '''
 
     chars = []
@@ -26,11 +29,9 @@ def intToStr(q: int) -> str:
         # adjust for 1 index
         q -= 1
 
-    # reverse and return
-    chars.reverse()
     return "".join(chars)
 
-def saveData(filename: str, data: dict|list):
+def saveData(filename: str, data: list):
     with open(f"{filename}", "w") as f:
         json.dump(data, f, indent=4) 
 
@@ -49,6 +50,12 @@ def bulkGenerate(func: callable, file_prefix: str, limit: int):
 
         saveData(f"{file_prefix}_{i}.json", data)
         i = i*10
+
+def createPoolData(fnc: callable, filename: str, size: int = 1_000_000):
+    data = []
+    for i in range(1_000_000, 1_000_000 + size):
+        data.append(fnc(i))
+    saveData(f"datapool/{filename}.json", data)
 
 # -- Structured Data
 def genName(n: int) -> tuple[str, str]:
@@ -194,3 +201,7 @@ if __name__ == "__main__":
     # generate 10 -> 1 million data sets for structured and unstructured
     bulkGenerate(createStructured, "structured/data", 1_000_000)
     bulkGenerate(createUnstructured, "unstructured/data", 1_000_000)
+
+    # create data that indexes from 1_000_000
+    createPoolData(createStructured, "structured", 100_000)
+    createPoolData(createUnstructured, "unstructured", 100_000)

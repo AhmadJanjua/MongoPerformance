@@ -1,62 +1,170 @@
+from monitor import measureFn
+from dataGen import createStructured
+import os
+import json
 from pymongo import MongoClient
+from pymongo.database import Database
 
-def create():
-    # creation time of database after loading in data from i/o
-    pass
+# -- General
+data_pool = {}
 
-def insertOne(structured: bool):
-    # insert_one
-    pass
+def updateDataPool():
+    '''
+    Loads in data from the datapool into the global variable
+    '''
 
-def insertMany(size:int, structured: bool):
-    # insert_many
-    pass
+    print("Collecting insertion data...")
+    data_pool["struct_insert_one"] = createStructured(1_000_000)
 
-def readOne():
-    # find_one: use uid and index it to find something in middle
-    pass
+    with open("datapool/structured.json", "r") as f:
+        data_pool["struct_insert_many"] = json.load(f)
 
-def readMany():
-    # find all: use uid get all even
-    pass
+    print("Done")
 
-def updateOne():
-    # update_one middle uid
-    pass
+def deleteCol(db: Database, col_name: str):
+    '''
+    Query to delete a collection
+    '''
+    db.drop_collection(col_name)
 
-def updateMany():
-    # update_many middle age
-    pass
+def createCol(db: Database, col_name: str, data: list):
+    '''
+    Query to create a collection
+    '''
+    db[col_name].insert_many(data)
 
-def replaceOne():
-    # replace_one
-    pass
+# -- Structured Queries
+def insertOneStruct(db: Database, col_name: str):
+    '''
+    Query to insert a single document
+    '''
+    db[col_name].insert_one(data_pool["struct_insert_one"])
 
-def deleteOne():
-    pass
+def insertManyStruct(db: Database, col_name: str):
+    '''
+    Query to insert a large amount of data
+    '''
+    db[col_name].insert_many(data_pool["struct_insert_many"])
 
-def deleteMany():
-    pass
+def readOneStruct(db: Database, col_name: str):
+    '''
+    Query to read a single middle data point
+    '''
+    total = db[col_name].count_documents({})
+    middle_uid = total // 2
+    db[col_name].find_one({"uid": middle_uid})
 
-def notIn():
-    pass
+def readManyStruct(db: Database, col_name: str):
+    '''
+    Query to read all uid % 4 = 0
+    '''
+    db[col_name].find({"$expr": {"$eq": [{"$mod": ["$uid", 4]}, 0]}})
 
-def elementExist():
-    pass
+def updateOneStruct(db: Database, col_name: str):
+    '''
+    Query to update middle document age and DOB
+    '''
+    total = db[col_name].count_documents({})
+    middle_uid = total // 2
+    db[col_name].update_one(
+        {"uid": middle_uid},
+        {"$set": {"birthday": "1-1-2000", "age": 25}}
+    )
 
-def regex():
-    pass
+def updateManyStruct(db: Database, col_name: str):
+    '''
+    Query to update the Calgary to Lethbridge in all documents
+    '''
+    db[col_name].update_many(
+        {"address.city": "Calgary"},
+        {"$set": {"address.city": "Lethbridge"}}
+    )
 
-def aggregate():
-    pass
+def replaceOneStruct(db: Database, col_name: str):
+    '''
+    Query to insert a new document in the middle
+    '''
+    total = db[col_name].count_documents({})
+    middle_uid = total // 2
+    new_doc = data_pool["struct_insert_one"].copy()
+    new_doc.pop("_id", None)
+    db[col_name].replace_one(
+        {"uid": middle_uid},
+        new_doc
+    )
 
-def textSearch():
-    pass
+def aggregateStruct(db: Database, col_name: str):
+    '''
+    Query to get the variance in all the ages in the dataset
+    '''
+    pipeline = [
+        {"$group": {"_id": None, "stdDev": {"$stdDevPop": "$age"}}},
+        {"$project": {"variance": {"$multiply": ["$stdDev", "$stdDev"]}}}
+    ]
+    db[col_name].aggregate(pipeline)
 
-def main():
-    client = MongoClient("mongodb://localhost:27017/")
-    db = client["test_db"]
-    collection = db["test_collection"]
+# -- Unstructured Queries TODO
+
+# -- Management Functions
+def collectMeasure(db: Database, col_name: str, data: list, fn: callable):
+    '''
+    This function aggregates the measurements collected for setting up a query
+    '''
+    measures = {}
+    measures["delete"] = measureFn(deleteCol, 0.1, db, col_name)
+    measures["create"] = measureFn(createCol, 0.1, db, col_name, data)
+    measures[fn.__name__] = measureFn(fn, 0.1, db, col_name)
+    return measures
+
+def run(client: MongoClient, db_name: str):
+    '''
+    This function runs through all the data in a folder and runs the
+    structured queries on the data.
+    '''
+    if db_name not in ["structured", "unstructured"]:
+        raise TypeError("invalid database name")
+
+    # lists everything
+    filenames = os.listdir(db_name)
+
+    # filter to include only json files
+    filenames = [x for x in filenames if x.endswith("json")]
+
+    # loop through datasets
+    for filename in filenames:
+        data = {}
+        cum_results = {}
+        path = f"{db_name}/{filename}"
+        col_name = filename.split(".")[0]
+
+        functions = [
+            insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
+            updateOneStruct, updateManyStruct, replaceOneStruct, aggregateStruct
+        ]
+
+        print("----------")
+        print(f"Opening file {filename}...")
+        # load in the data from the file
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        # loop through functions -> repeatedly run the test -> record metrics
+        for fn in functions:
+            for i in range(5):
+                print(f"Running test {col_name}-{fn.__name__}-iteration:{i}")
+                cum_results[f"{col_name}_{fn.__name__}_{i}"] = collectMeasure(client[db_name], col_name, data, fn)
+        
+        # save the results
+        print(f"Saving file {filename}")
+        with open(f"logs/{db_name}_{col_name}.json", "w") as f:
+            json.dump(cum_results, f, indent=4)
 
 if __name__ == "__main__":
-    main()
+    # generate the data in the data pool
+    updateDataPool()
+
+    # connect to mongodb
+    client = MongoClient("mongodb://localhost:27017/")
+
+    # run tests for all structured data tests
+    run(client, "structured")
