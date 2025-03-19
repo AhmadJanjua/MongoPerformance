@@ -1,8 +1,5 @@
-from helper import *
-import time
+def main():
+    pass
 
-if __name__ == '__main__':
-    start = time.time_ns()
-    genUnStructData(10_000_000)
-    end = time.time_ns()
-    print((end - start) / 10**9)
+if __name__ == "__main__":
+    main()
