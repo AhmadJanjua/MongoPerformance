@@ -15,7 +15,6 @@
     ![alt text](docs/directory.png)
     
     - NOTE: ensure you are running from the root directory as relative paths may not work.
-    - NOTE: ensure that the folders already exist
 3. run test
     - setup is done, now simply run
     ```

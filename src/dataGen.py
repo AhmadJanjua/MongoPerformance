@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta
 import json
 import random
 import uuid
+import os
 
 # -- General
 def intToStr(q: int) -> str:
@@ -32,8 +33,9 @@ def intToStr(q: int) -> str:
     return "".join(chars)
 
 def saveData(filename: str, data: list):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(f"{filename}", "w") as f:
-        json.dump(data, f, indent=4) 
+        json.dump(data, f, indent=4)
 
 def createJson(fnc: callable, size: int) -> list:
     data = []
@@ -199,9 +201,10 @@ if __name__ == "__main__":
     random.seed(0)
 
     # generate 10 -> 1 million data sets for structured and unstructured
-    bulkGenerate(createStructured, "structured/data", 1_000_000)
-    bulkGenerate(createUnstructured, "unstructured/data", 1_000_000)
+    bulkGenerate(createStructured, "structured/data", 10_000_000)
+    bulkGenerate(createUnstructured, "unstructured/data", 10_000_000)
+
 
     # create data that indexes from 1_000_000
-    createPoolData(createStructured, "structured", 100_000)
-    createPoolData(createUnstructured, "unstructured", 100_000)
+    createPoolData(createStructured, "structured", 1_000_000)
+    createPoolData(createUnstructured, "unstructured", 1_000_000)
