@@ -156,6 +156,7 @@ def run(client: MongoClient, db_name: str):
         
         # save the results
         print(f"Saving file {filename}")
+        os.makedirs("logs", exist_ok=True)
         with open(f"logs/{db_name}_{col_name}.json", "w") as f:
             json.dump(cum_results, f, indent=4)
 
