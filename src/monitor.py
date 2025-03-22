@@ -3,6 +3,8 @@ import threading
 import time
 import json
 
+GiB = (1024**3)
+
 def systemConfig() -> str:
     '''
     Function returns a message containing system resource state
@@ -20,24 +22,26 @@ def systemConfig() -> str:
 
     # disk related
     disk = psutil.disk_io_counters()
-    msg += f"disk read: {disk.read_bytes} B\n"
-    msg += f"disk write: {disk.write_bytes} B\n"
-    msg += f"disk read: {disk.read_time} ms\n"
-    msg += f"disk write: {disk.read_time} ms\n"
+    msg += f"disk read: {disk.read_bytes/GiB} GiB\n"
+    msg += f"disk write: {disk.write_bytes/GiB} GiB\n"
+    msg += f"disk read: {disk.read_time/1000} s\n"
+    msg += f"disk write: {disk.read_time/1000} s\n"
 
     disk = psutil.disk_usage('/')
-    msg += f"disk used: {disk.used} B\n"
-    msg += f"disk free: {disk.free} B\n"
+    msg += f"disk used: {disk.used/GiB} GiB\n"
+    msg += f"disk free: {disk.free/GiB} GiB\n"
 
     # swap related
     swap = psutil.swap_memory()
-    msg += f"swap used: {swap.used} B\n"
-    msg += f"swap free: {swap.free} B\n"
+    msg += f"swap total: {swap.total/GiB} GiB\n"
+    msg += f"swap used: {swap.used/GiB} GiB\n"
+    msg += f"swap free: {swap.free/GiB} GiB\n"
 
     # virtual related
     virtual = psutil.virtual_memory()
-    msg += f"virtual used: {virtual.used} B\n"
-    msg += f"virtual free: {virtual.free} B\n"
+    msg += f"virtual total: {virtual.total/GiB} GiB\n"
+    msg += f"virtual free: {virtual.available/GiB} GiB\n"
+    msg += f"virtual used: {(virtual.total - virtual.available)/GiB} GiB\n"
 
     return msg
 
@@ -46,41 +50,28 @@ def sysSnapshot() -> dict:
     function that returns the status of resources as a dictionary
     '''
     # track the cpu
-    cpu_freq = psutil.cpu_freq().current
     cpu_util = psutil.cpu_percent(interval=0.1)
 
     # track disk
     disk = psutil.disk_io_counters()
-    disk_read_bytes = disk.read_bytes
-    disk_write_bytes = disk.write_bytes
-    disk_read_ms = disk.read_time
-    disk_write_ms = disk.write_time
+    disk_read = disk.read_bytes/GiB
+    disk_write = disk.write_bytes/GiB
 
     disk = psutil.disk_usage('/')
-    disk_used = disk.used
-    disk_free = disk.free
-
-    # track swap
-    swap = psutil.swap_memory()
-    swap_used = swap.used
-    swap_free = swap.free
+    disk_used = disk.used/GiB
+    disk_free = disk.free/GiB
 
     # track virtual
     virtual = psutil.virtual_memory()
-    virtual_used = virtual.used
-    virtual_free = virtual.free
+    virtual_free = virtual.available/GiB
+    virtual_used = (virtual.total - virtual.available)/GiB
 
     return {
-        "cpu_freq": cpu_freq,
         "cpu_util": cpu_util,
-        "disk_read_b": disk_read_bytes,
-        "disk_write_b": disk_write_bytes,
-        "disk_read_t": disk_read_ms,
-        "disk_write_t": disk_write_ms,
+        "disk_read": disk_read,
+        "disk_write": disk_write,
         "disk_used": disk_used,
-        "disk_free":disk_free,
-        "swap_used": swap_used,
-        "swap_free": swap_free,
+        "disk_free": disk_free,
         "virtual_used": virtual_used,
         "virtual_free": virtual_free,
     }
@@ -127,13 +118,14 @@ def measureFn(fn: callable, interval: float = 0.2, *argv, **kwargv) -> dict:
 
 def examplefn():
     start = 0
-    for i in range(50_000_000):
+    for i in range(50_000_00):
         start += 10
 
         if i % 4 == 0:
             start -= 1
 
 if __name__ == '__main__':
+    print(systemConfig())
     results = measureFn(examplefn)
 
     with open("logs/example.json", "w") as f:
