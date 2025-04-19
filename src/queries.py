@@ -4,7 +4,6 @@ import os
 import json
 from pymongo import MongoClient
 from pymongo.database import Database
-
 from src.dataGen import createUnstructured
 
 # -- General
@@ -280,15 +279,19 @@ def run(client: MongoClient, db_name: str):
         path = f"{db_name}/{filename}"
         col_name = filename.split(".")[0]
 
-        structured_functions = [
-            insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
-            updateOneStruct, updateManyStruct, replaceOneStruct, aggregateStruct
-        ]
 
         unstructured_functions = [
             findFiveCommentsUnstruct, sumLikesIfExistsUnstruct, countArchivedStatusUnstruct,
             replaceTwoCommentsUnstruct, regexSearchInCommentsUnstruct, projectSparseFieldsUnstruct
         ]
+        
+
+        structured_functions = [
+            insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
+            updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct, 
+            insertOneThenUpdateBirthdayStruct, readThenDeleteOldUsersStruct, aggregateStruct
+        ]
+        
 
         print("----------")
 
@@ -307,8 +310,7 @@ def run(client: MongoClient, db_name: str):
                 # save the results
                 print(f"Saving file {filename}")
                 os.makedirs(f"logs/{db_name}/{col_name}/{fn.__name__}", exist_ok=True)
-                with open(f"logs/{db_name}/{col_name}/{fn.__name__}/{fn.__name__}_iteration_{i}_{col_name}.json",
-                          "w") as f:
+                with open(f"logs/{db_name}/{col_name}/{fn.__name__}/{fn.__name__}_iteration_{i}_{col_name}.json","w") as f:
                     json.dump(collectMeasure(client[db_name], col_name, data, fn), f, indent=4)
 
 if __name__ == "__main__":
