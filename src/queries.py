@@ -5,6 +5,8 @@ import json
 from pymongo import MongoClient
 from pymongo.database import Database
 
+from src.dataGen import createUnstructured
+
 # -- General
 data_pool = {}
 
@@ -14,10 +16,16 @@ def updateDataPool():
     '''
 
     print("Collecting insertion data...")
+
     data_pool["struct_insert_one"] = createStructured(1_000_000)
+
+    data_pool["unstruct_insert_one"] = createUnstructured(1_000_000)
 
     with open("datapool/structured.json", "r") as f:
         data_pool["struct_insert_many"] = json.load(f)
+
+    with open("datapool/unstructured.json", "r") as f:
+        data_pool["unstruct_insert_many"] = json.load(f)
 
     print("Done")
 
@@ -34,6 +42,7 @@ def createCol(db: Database, col_name: str, data: list):
     db[col_name].insert_many(data)
 
 # -- Structured Queries
+
 def insertOneStruct(db: Database, col_name: str):
     '''
     Query to insert a single document
@@ -105,7 +114,59 @@ def aggregateStruct(db: Database, col_name: str):
 
 # -- Unstructured Queries TODO
 
+def findWithImageOnlyUnstruct(db: Database, col_name: str):
+    db[col_name].find({"image": {"$exists": True}})
+
+def findFiveCommentsUnstruct(db: Database, col_name: str):
+    '''
+    Query to find a document with exactly 5 comments
+    '''
+    db[col_name].find_one({ "comments.4": { "$exists": True }, "comments.5": { "$exists": False } })
+
+def sumLikesIfExistsUnstruct(db: Database, col_name: str):
+    '''
+    Query to sum likes if exists
+    '''
+    pipeline = [
+        {"$match": {"likes": {"$exists": True}}},
+        {"$group": {"_id": None, "total_likes": {"$sum": "$likes"}}}
+    ]
+    db[col_name].aggregate(pipeline)
+
+def countArchivedStatusUnstruct(db: Database, col_name: str):
+    '''
+    Query to count archived status
+    '''
+    pipeline = [
+        {"$group": {"_id": "$archived", "count": {"$sum": 1}}}
+    ]
+    db[col_name].aggregate(pipeline)
+
+def replaceTwoCommentsUnstruct(db: Database, col_name: str):
+    '''
+    Query to replace a document with two comments
+    '''
+    doc = db[col_name].find_one({"comments.1": {"$exists": True}, "comments.2": {"$exists": False}})
+    if not doc:
+        return
+    new_doc = data_pool["unstruct_insert_one"].copy()
+    new_doc.pop("_id", None)
+    db[col_name].replace_one({"_id": doc["_id"]}, new_doc)
+
+def regexSearchInCommentsUnstruct(db: Database, col_name: str):
+    '''
+    Query to find a comment with at least one string element using regex
+    '''
+    db[col_name].find({"comments": {"$elemMatch": {"$regex": "^enim"}}})
+
+def projectSparseFieldsUnstruct(db: Database, col_name: str):
+    '''
+    Query to project sparse fields in all documents
+    '''
+    db[col_name].find({}, {"uid": 1, "image": 1, "nonexistent": 1})
+
 # -- Management Functions
+
 def collectMeasure(db: Database, col_name: str, data: list, fn: callable):
     '''
     This function aggregates the measurements collected for setting up a query
@@ -133,32 +194,39 @@ def run(client: MongoClient, db_name: str):
     # loop through datasets
     for filename in filenames:
         data = {}
-        cum_results = {}
         path = f"{db_name}/{filename}"
         col_name = filename.split(".")[0]
 
-        functions = [
+        structured_functions = [
             insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
             updateOneStruct, updateManyStruct, replaceOneStruct, aggregateStruct
         ]
 
+        unstructured_functions = [
+            findFiveCommentsUnstruct, sumLikesIfExistsUnstruct, countArchivedStatusUnstruct,
+            replaceTwoCommentsUnstruct, regexSearchInCommentsUnstruct, projectSparseFieldsUnstruct
+        ]
+
         print("----------")
+
         print(f"Opening file {filename}...")
         # load in the data from the file
         with open(path, "r") as f:
             data = json.load(f)
 
         # loop through functions -> repeatedly run the test -> record metrics
+
+        functions = structured_functions if db_name == "structured" else unstructured_functions
+
         for fn in functions:
             for i in range(5):
                 print(f"Running test {col_name}-{fn.__name__}-iteration:{i}")
-                cum_results[f"{col_name}_{fn.__name__}_{i}"] = collectMeasure(client[db_name], col_name, data, fn)
-        
-        # save the results
-        print(f"Saving file {filename}")
-        os.makedirs("logs", exist_ok=True)
-        with open(f"logs/{db_name}_{col_name}.json", "w") as f:
-            json.dump(cum_results, f, indent=4)
+                # save the results
+                print(f"Saving file {filename}")
+                os.makedirs(f"logs/{db_name}/{col_name}/{fn.__name__}", exist_ok=True)
+                with open(f"logs/{db_name}/{col_name}/{fn.__name__}/{fn.__name__}_iteration_{i}_{col_name}.json",
+                          "w") as f:
+                    json.dump(collectMeasure(client[db_name], col_name, data, fn), f, indent=4)
 
 if __name__ == "__main__":
     # generate the data in the data pool
@@ -168,4 +236,5 @@ if __name__ == "__main__":
     client = MongoClient("mongodb://localhost:27017/")
 
     # run tests for all structured data tests
+    run(client, "unstructured")
     run(client, "structured")
