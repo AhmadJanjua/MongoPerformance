@@ -1,5 +1,5 @@
 from monitor import measureFn
-from dataGen import createStructured
+from dataGen import createStructured, genBirthday
 import os
 import json
 from pymongo import MongoClient
@@ -93,6 +93,48 @@ def replaceOneStruct(db: Database, col_name: str):
         new_doc
     )
 
+
+def insertManyThenDeleteManyStruct(db: Database, col_name: str):
+    '''
+    Complex query: Insert many → Delete users with age > 60
+    '''
+    db[col_name].insert_many(data_pool["struct_insert_many"])
+    db[col_name].delete_many(
+        {"age": {"$gt": 60}}
+    )
+
+
+def insertOneThenUpdateBirthdayStruct(db: Database, col_name: str):
+    '''
+    Complex query: Insert one user → Update that user's birthday
+    '''
+    # Step 1: Insert one user
+    user = data_pool["struct_insert_one"]
+    db[col_name].insert_one(user)
+
+    # Step 2: Update that user's birthday
+    new_birthday = genBirthday(user["age"], user["uid"]).strftime("%d-%m-%Y")
+
+    db[col_name].update_one(
+        {"uid": user["uid"]},
+        {"$set": {"birthday": new_birthday}}
+    )
+
+
+def readThenDeleteOldUsersStruct(db: Database, col_name: str):
+    '''
+    Complex query: Read all users with age > 130, then delete them one by one
+    '''
+    # Step 1: Read all users with age > 130
+    old_users = list(db[col_name].find({"age": {"$gt": 130}}, {"uid": 1}))
+
+    # Step 2: Delete them one by one
+    for user in old_users:
+        db[col_name].delete_one(
+            {"uid": user["uid"]}
+        )
+
+
 def aggregateStruct(db: Database, col_name: str):
     '''
     Query to get the variance in all the ages in the dataset
@@ -101,7 +143,47 @@ def aggregateStruct(db: Database, col_name: str):
         {"$group": {"_id": None, "stdDev": {"$stdDevPop": "$age"}}},
         {"$project": {"variance": {"$multiply": ["$stdDev", "$stdDev"]}}}
     ]
-    db[col_name].aggregate(pipeline)
+    list(db[col_name].aggregate(pipeline))
+
+
+def aggregationStresser(db: Database, col_name: str):
+    '''
+    Stressful aggregation: group by city & age, compute multiple stats
+    '''
+    pipeline = [
+        {
+            "$group": {
+                "_id": {
+                    "city": "$address.city",
+                    "age": "$age"
+                },
+                "count": {"$sum": 1},
+                "avgUid": {"$avg": "$uid"},
+                "minUid": {"$min": "$uid"},
+                "maxUid": {"$max": "$uid"},
+                "stdDevUid": {"$stdDevPop": "$uid"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "city": "$_id.city",
+                "age": "$_id.age",
+                "count": 1,
+                "avgUid": 1,
+                "stdDevUid": 1,
+                "varianceUid": {"$multiply": ["$stdDevUid", "$stdDevUid"]},
+                "rangeUid": {"$subtract": ["$maxUid", "$minUid"]}
+            }
+        },
+        {
+            "$sort": {"count": -1}
+        }
+    ]
+
+    list(db[col_name].aggregate(pipeline))
+
+
 
 # -- Unstructured Queries TODO
 
@@ -115,6 +197,7 @@ def collectMeasure(db: Database, col_name: str, data: list, fn: callable):
     measures["create"] = measureFn(createCol, 0.1, db, col_name, data)
     measures[fn.__name__] = measureFn(fn, 0.1, db, col_name)
     return measures
+
 
 def run(client: MongoClient, db_name: str):
     '''
@@ -136,11 +219,17 @@ def run(client: MongoClient, db_name: str):
         cum_results = {}
         path = f"{db_name}/{filename}"
         col_name = filename.split(".")[0]
+        
+        if filename != "data_1000.json":
+            continue
 
-        functions = [
-            insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
-            updateOneStruct, updateManyStruct, replaceOneStruct, aggregateStruct
-        ]
+        # functions = [
+        #     insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
+        #     updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct, 
+        #     insertOneThenUpdateBirthdayStruct, readThenDeleteOldUsersStruct, aggregateStruct
+        # ]
+        
+        functions = [aggregationStresser]
 
         print("----------")
         print(f"Opening file {filename}...")
