@@ -220,16 +220,13 @@ def run(client: MongoClient, db_name: str):
         path = f"{db_name}/{filename}"
         col_name = filename.split(".")[0]
         
-        if filename != "data_1000.json":
-            continue
 
-        # functions = [
-        #     insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
-        #     updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct, 
-        #     insertOneThenUpdateBirthdayStruct, readThenDeleteOldUsersStruct, aggregateStruct
-        # ]
+        functions = [
+            insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
+            updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct, 
+            insertOneThenUpdateBirthdayStruct, readThenDeleteOldUsersStruct, aggregateStruct
+        ]
         
-        functions = [aggregationStresser]
 
         print("----------")
         print(f"Opening file {filename}...")
