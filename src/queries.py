@@ -1,10 +1,9 @@
 from monitor import measureFn
-from dataGen import createStructured, genBirthday
+from dataGen import createStructured, genBirthday, createUnstructured
 import os
 import json
 from pymongo import MongoClient
 from pymongo.database import Database
-from src.dataGen import createUnstructured
 
 # -- General
 data_pool = {}
