@@ -194,56 +194,112 @@ def aggregationStresser(db: Database, col_name: str):
 
 # -- Unstructured Queries TODO
 
-def findWithImageOnlyUnstruct(db: Database, col_name: str):
-    db[col_name].find({"image": {"$exists": True}})
+def insertOneUnstruct(db: Database, col_name: str):
+    '''
+    Inserts one unstructured document into the collection
+    '''
+    db[col_name].insert_one(data_pool["unstruct_insert_one"])
 
-def findFiveCommentsUnstruct(db: Database, col_name: str):
-    '''
-    Query to find a document with exactly 5 comments
-    '''
-    db[col_name].find_one({ "comments.4": { "$exists": True }, "comments.5": { "$exists": False } })
 
-def sumLikesIfExistsUnstruct(db: Database, col_name: str):
+def insertManyUnstruct(db: Database, col_name: str):
     '''
-    Query to sum likes if exists
+    Inserts many unstructured documents into the collection
     '''
-    pipeline = [
-        {"$match": {"likes": {"$exists": True}}},
-        {"$group": {"_id": None, "total_likes": {"$sum": "$likes"}}}
-    ]
-    db[col_name].aggregate(pipeline)
+    db[col_name].insert_many(data_pool["unstruct_insert_many"])
 
-def countArchivedStatusUnstruct(db: Database, col_name: str):
-    '''
-    Query to count archived status
-    '''
-    pipeline = [
-        {"$group": {"_id": "$archived", "count": {"$sum": 1}}}
-    ]
-    db[col_name].aggregate(pipeline)
 
-def replaceTwoCommentsUnstruct(db: Database, col_name: str):
+def readOneUnstruct(db: Database, col_name: str):
     '''
-    Query to replace a document with two comments
+    Reads one unstructured document from the collection
     '''
-    doc = db[col_name].find_one({"comments.1": {"$exists": True}, "comments.2": {"$exists": False}})
-    if not doc:
-        return
+    total = db[col_name].count_documents({})
+    middle_uid = total // 2
+    db[col_name].find_one({"uid": middle_uid})
+
+
+def readManyUnstruct(db: Database, col_name: str):
+    '''
+    Reads many unstructured documents from the collection
+    '''
+    db[col_name].find({
+        "uid": {"$exists": True},
+        "$expr": {"$eq": [{"$mod": ["$uid", 4]}, 0]}
+    })
+
+
+def updateOneUnstruct(db: Database, col_name: str):
+    '''
+    Updates a middle document's timestamp and likes.
+    '''
+    total = db[col_name].count_documents({"uid": {"$exists": True}})
+    middle_uid = total // 2
+    db[col_name].update_one(
+        {"uid": middle_uid},
+        {"$set": {"timestamp": "01-01-2000 00:00:00", "likes": 25}}
+    )
+
+
+def updateManyUnstruct(db: Database, col_name: str):
+    '''
+    Marks all users with likes >= 30 as archived = true
+    '''
+    db[col_name].update_many(
+        {"likes": {"$exists": True, "$gte": 30}},
+        {"$set": {"archived": True}}
+    )
+
+
+def replaceOneUnstruct(db: Database, col_name: str):
+    '''
+    Replaces the middle document by uid with a new document.
+    '''
+    total = db[col_name].count_documents({"uid": {"$exists": True}})
+    middle_uid = total // 2
     new_doc = data_pool["unstruct_insert_one"].copy()
     new_doc.pop("_id", None)
-    db[col_name].replace_one({"_id": doc["_id"]}, new_doc)
+    db[col_name].replace_one({"uid": middle_uid}, new_doc)
 
-def regexSearchInCommentsUnstruct(db: Database, col_name: str):
-    '''
-    Query to find a comment with at least one string element using regex
-    '''
-    db[col_name].find({"comments": {"$elemMatch": {"$regex": "^enim"}}})
 
-def projectSparseFieldsUnstruct(db: Database, col_name: str):
+def insertManyThenDeleteManyUnstruct(db: Database, col_name: str):
     '''
-    Query to project sparse fields in all documents
+    Complex query: Insert many documents then deletes users with likes > 60
     '''
-    db[col_name].find({}, {"uid": 1, "image": 1, "nonexistent": 1})
+    db[col_name].insert_many(data_pool["unstruct_insert_many"])
+    db[col_name].delete_many({"likes": {"$exists": True, "$gt": 60}})
+
+
+def insertOneThenUpdateTimestampUnstruct(db: Database, col_name: str):
+    '''
+    Inserts one document then updates the timestamp.
+    '''
+    user = data_pool["unstruct_insert_one"]
+    db[col_name].insert_one(user)
+    new_ts = "01-01-2025 00:00:00"
+    db[col_name].update_one(
+        {"uid": user.get("uid")},
+        {"$set": {"timestamp": new_ts}}
+    )
+
+
+def readThenDeleteManyLikesUnstruct(db: Database, col_name: str):
+    '''
+    Finds documents with 130+ likes then deletes them one by one.
+    '''
+    old_users = list(db[col_name].find({"likes": {"$exists": True, "$gt": 130}}, {"uid": 1}))
+    for user in old_users:
+        db[col_name].delete_one({"uid": user["uid"]})
+
+
+def aggregateUnstruct(db: Database, col_name: str):
+    '''
+    Computes the variance of all likes values.
+    '''
+    pipeline = [
+        {"$match": {"likes": {"$type": "number"}}},
+        {"$group": {"_id": None, "stdDev": {"$stdDevPop": "$likes"}}},
+        {"$project": {"variance": {"$multiply": ["$stdDev", "$stdDev"]}}}
+    ]
+    list(db[col_name].aggregate(pipeline))
 
 # -- Management Functions
 
@@ -278,19 +334,18 @@ def run(client: MongoClient, db_name: str):
         path = f"{db_name}/{filename}"
         col_name = filename.split(".")[0]
 
-
         unstructured_functions = [
-            findFiveCommentsUnstruct, sumLikesIfExistsUnstruct, countArchivedStatusUnstruct,
-            replaceTwoCommentsUnstruct, regexSearchInCommentsUnstruct, projectSparseFieldsUnstruct
+            insertOneUnstruct, insertManyUnstruct, readOneUnstruct, readManyUnstruct,
+            updateOneUnstruct, updateManyUnstruct, replaceOneUnstruct, insertManyThenDeleteManyUnstruct,
+            insertOneThenUpdateTimestampUnstruct, readThenDeleteManyLikesUnstruct, aggregateUnstruct
         ]
-        
 
         structured_functions = [
             insertOneStruct, insertManyStruct, readOneStruct, readManyStruct,
-            updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct, 
+            updateOneStruct, updateManyStruct, replaceOneStruct, insertManyThenDeleteManyStruct,
             insertOneThenUpdateBirthdayStruct, readThenDeleteOldUsersStruct, aggregateStruct
         ]
-        
+
 
         print("----------")
 
@@ -309,8 +364,10 @@ def run(client: MongoClient, db_name: str):
                 # save the results
                 print(f"Saving file {filename}")
                 os.makedirs(f"logs/{db_name}/{col_name}/{fn.__name__}", exist_ok=True)
-                with open(f"logs/{db_name}/{col_name}/{fn.__name__}/{fn.__name__}_iteration_{i}_{col_name}.json","w") as f:
+                with open(f"logs/{db_name}/{col_name}/{fn.__name__}/{fn.__name__}_iteration_{i}_{col_name}.json",
+                          "w") as f:
                     json.dump(collectMeasure(client[db_name], col_name, data, fn), f, indent=4)
+
 
 if __name__ == "__main__":
     # generate the data in the data pool
