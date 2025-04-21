@@ -377,5 +377,5 @@ if __name__ == "__main__":
     client = MongoClient("mongodb://localhost:27017/")
 
     # run tests for all structured data tests
-    run(client, "unstructured")
+    # run(client, "unstructured")
     run(client, "structured")
