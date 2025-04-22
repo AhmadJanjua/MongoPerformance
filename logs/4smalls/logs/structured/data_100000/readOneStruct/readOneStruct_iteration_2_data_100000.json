@@ -1,0 +1,104 @@
+{
+    "delete": {
+        "baseline": {
+            "cpu_util": 9.5,
+            "disk_read": 12.482582092285156,
+            "disk_write": 4.972600936889648,
+            "disk_used": 4.191165924072266,
+            "disk_free": 23.810909271240234,
+            "virtual_used": 1.1584625244140625,
+            "virtual_free": 0.7074050903320312
+        },
+        "samples": [
+            {
+                "cpu_util": 0.0,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.972604751586914,
+                "disk_used": 4.191165924072266,
+                "disk_free": 23.810909271240234,
+                "virtual_used": 1.1584625244140625,
+                "virtual_free": 0.7074050903320312,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.0008475780487060547
+    },
+    "create": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 12.482582092285156,
+            "disk_write": 4.972604751586914,
+            "disk_used": 4.191165924072266,
+            "disk_free": 23.810909271240234,
+            "virtual_used": 1.1584625244140625,
+            "virtual_free": 0.7074050903320312
+        },
+        "samples": [
+            {
+                "cpu_util": 50.0,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.972604751586914,
+                "disk_used": 4.191165924072266,
+                "disk_free": 23.810909271240234,
+                "virtual_used": 1.1584625244140625,
+                "virtual_free": 0.7074050903320312,
+                "sample": 1
+            },
+            {
+                "cpu_util": 56.5,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.972604751586914,
+                "disk_used": 4.191165924072266,
+                "disk_free": 23.810909271240234,
+                "virtual_used": 1.1512718200683594,
+                "virtual_free": 0.7145957946777344,
+                "sample": 2
+            },
+            {
+                "cpu_util": 70.0,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.975194931030273,
+                "disk_used": 4.1921234130859375,
+                "disk_free": 23.809951782226562,
+                "virtual_used": 1.1652908325195312,
+                "virtual_free": 0.7005767822265625,
+                "sample": 3
+            },
+            {
+                "cpu_util": 23.8,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.977434158325195,
+                "disk_used": 4.194042205810547,
+                "disk_free": 23.808032989501953,
+                "virtual_used": 1.1682052612304688,
+                "virtual_free": 0.697662353515625,
+                "sample": 4
+            }
+        ],
+        "response_time": 0.7318384647369385
+    },
+    "readOneStruct": {
+        "baseline": {
+            "cpu_util": 15.0,
+            "disk_read": 12.482582092285156,
+            "disk_write": 4.977434158325195,
+            "disk_used": 4.195503234863281,
+            "disk_free": 23.80657196044922,
+            "virtual_used": 1.1742935180664062,
+            "virtual_free": 0.6915740966796875
+        },
+        "samples": [
+            {
+                "cpu_util": 35.0,
+                "disk_read": 12.482582092285156,
+                "disk_write": 4.977434158325195,
+                "disk_used": 4.195697784423828,
+                "disk_free": 23.806377410888672,
+                "virtual_used": 1.1739921569824219,
+                "virtual_free": 0.6918754577636719,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.05751538276672363
+    }
+}
