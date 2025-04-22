@@ -1,0 +1,114 @@
+{
+    "delete": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 12.483039855957031,
+            "disk_write": 5.973573684692383,
+            "disk_used": 4.042579650878906,
+            "disk_free": 23.959495544433594,
+            "virtual_used": 1.0037422180175781,
+            "virtual_free": 0.8621253967285156
+        },
+        "samples": [
+            {
+                "cpu_util": 4.8,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.973577499389648,
+                "disk_used": 4.042579650878906,
+                "disk_free": 23.959495544433594,
+                "virtual_used": 1.0037155151367188,
+                "virtual_free": 0.862152099609375,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.0009608268737792969
+    },
+    "create": {
+        "baseline": {
+            "cpu_util": 4.8,
+            "disk_read": 12.483039855957031,
+            "disk_write": 5.973577499389648,
+            "disk_used": 4.042579650878906,
+            "disk_free": 23.959495544433594,
+            "virtual_used": 1.0037002563476562,
+            "virtual_free": 0.8621673583984375
+        },
+        "samples": [
+            {
+                "cpu_util": 5.0,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.973733901977539,
+                "disk_used": 4.042591094970703,
+                "disk_free": 23.959484100341797,
+                "virtual_used": 1.0036697387695312,
+                "virtual_free": 0.8621978759765625,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.01883554458618164
+    },
+    "insertManyThenDeleteManyStruct": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 12.483039855957031,
+            "disk_write": 5.973733901977539,
+            "disk_used": 4.042591094970703,
+            "disk_free": 23.959484100341797,
+            "virtual_used": 1.0036659240722656,
+            "virtual_free": 0.8622016906738281
+        },
+        "samples": [
+            {
+                "cpu_util": 52.0,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.973733901977539,
+                "disk_used": 4.042591094970703,
+                "disk_free": 23.959484100341797,
+                "virtual_used": 1.0036659240722656,
+                "virtual_free": 0.8622016906738281,
+                "sample": 1
+            },
+            {
+                "cpu_util": 57.1,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.974348068237305,
+                "disk_used": 4.042591094970703,
+                "disk_free": 23.959484100341797,
+                "virtual_used": 1.0052947998046875,
+                "virtual_free": 0.8605728149414062,
+                "sample": 2
+            },
+            {
+                "cpu_util": 55.0,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.977624893188477,
+                "disk_used": 4.043041229248047,
+                "disk_free": 23.959033966064453,
+                "virtual_used": 1.0084648132324219,
+                "virtual_free": 0.8574028015136719,
+                "sample": 3
+            },
+            {
+                "cpu_util": 52.4,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.994150161743164,
+                "disk_used": 4.043498992919922,
+                "disk_free": 23.958576202392578,
+                "virtual_used": 1.0082626342773438,
+                "virtual_free": 0.85760498046875,
+                "sample": 4
+            },
+            {
+                "cpu_util": 89.5,
+                "disk_read": 12.483039855957031,
+                "disk_write": 5.994832992553711,
+                "disk_used": 4.046306610107422,
+                "disk_free": 23.955768585205078,
+                "virtual_used": 1.0107383728027344,
+                "virtual_free": 0.8551292419433594,
+                "sample": 5
+            }
+        ],
+        "response_time": 1.1327342987060547
+    }
+}

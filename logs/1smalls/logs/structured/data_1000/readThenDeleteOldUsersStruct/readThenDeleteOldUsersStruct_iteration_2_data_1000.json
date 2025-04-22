@@ -1,0 +1,74 @@
+{
+    "delete": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 0.46949005126953125,
+            "disk_write": 4.456357955932617,
+            "disk_used": 3.895751953125,
+            "disk_free": 24.1063232421875,
+            "virtual_used": 0.9554977416992188,
+            "virtual_free": 0.910369873046875
+        },
+        "samples": [
+            {
+                "cpu_util": 5.0,
+                "disk_read": 0.46949005126953125,
+                "disk_write": 4.456361770629883,
+                "disk_used": 3.895751953125,
+                "disk_free": 24.1063232421875,
+                "virtual_used": 0.9554977416992188,
+                "virtual_free": 0.910369873046875,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.0008728504180908203
+    },
+    "create": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 0.46949005126953125,
+            "disk_write": 4.456361770629883,
+            "disk_used": 3.895751953125,
+            "disk_free": 24.1063232421875,
+            "virtual_used": 0.9554977416992188,
+            "virtual_free": 0.910369873046875
+        },
+        "samples": [
+            {
+                "cpu_util": 10.0,
+                "disk_read": 0.46949005126953125,
+                "disk_write": 4.456506729125977,
+                "disk_used": 3.8957595825195312,
+                "disk_free": 24.10631561279297,
+                "virtual_used": 0.9554977416992188,
+                "virtual_free": 0.910369873046875,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.024648666381835938
+    },
+    "readThenDeleteOldUsersStruct": {
+        "baseline": {
+            "cpu_util": 0.0,
+            "disk_read": 0.46949005126953125,
+            "disk_write": 4.456579208374023,
+            "disk_used": 3.8957595825195312,
+            "disk_free": 24.10631561279297,
+            "virtual_used": 0.9554519653320312,
+            "virtual_free": 0.9104156494140625
+        },
+        "samples": [
+            {
+                "cpu_util": 10.5,
+                "disk_read": 0.46949005126953125,
+                "disk_write": 4.456598281860352,
+                "disk_used": 3.8957595825195312,
+                "disk_free": 24.10631561279297,
+                "virtual_used": 0.9554481506347656,
+                "virtual_free": 0.9104194641113281,
+                "sample": 1
+            }
+        ],
+        "response_time": 0.023566722869873047
+    }
+}
